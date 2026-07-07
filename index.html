@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ប្រព័ន្ធចុះឈ្មោះសិស្ស - វិទ្យាល័យល្វា</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for Khmer Language -->
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,100..700;1,100..700&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Supabase JS CDN (បណ្ណាល័យភ្ជាប់ទៅកាន់ Supabase) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Custom Style with Print Configurations -->
+    <style>
+        body {
+            font-family: 'Kantumruy Pro', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        /* CSS rules for elegant printing on A4 Portrait */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 1.5cm 1.2cm;
+            }
+            body {
+                background-color: #ffffff !important;
+                color: #000000 !important;
+                font-size: 11pt !important;
+            }
+            /* Hide unnecessary UI elements on print */
+            header, footer, .tab-btn, .no-print, #supabase-tab, #report-tab, #list-tab, button, input[type="file"] {
+                display: none !important;
+            }
+            /* Force show the registration form tab */
+            #form-tab {
+                display: block !important;
+                width: 100% !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+            }
+            /* Style container cards to look flat and formal */
+            .bg-white {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                margin-bottom: 20px !important;
+            }
+            .border-t-4 {
+                border-top: none !important;
+            }
+            /* Convert styled cards/boxes to clean borderless areas */
+            .bg-slate-50, .bg-blue-50\/50, .bg-amber-50\/30 {
+                background-color: transparent !important;
+                border: none !important;
+                padding: 0 !important;
+            }
+            h4 {
+                color: #000000 !important;
+                border-bottom: 2px solid #000000 !important;
+                padding-bottom: 4px !important;
+                margin-top: 20px !important;
+                font-weight: bold !important;
+            }
+            /* Format Inputs and Selects into elegant printed dotted lines */
+            input, select, textarea {
+                border: none !important;
+                border-bottom: 1px dotted #000000 !important;
+                background-color: transparent !important;
+                box-shadow: none !important;
+                padding: 2px 4px !important;
+                border-radius: 0px !important;
+                color: #000000 !important;
+                font-family: 'Kantumruy Pro', sans-serif !important;
+                font-size: 11pt !important;
+                appearance: none !important;
+                -webkit-appearance: none !important;
+                -moz-appearance: none !important;
+            }
+            /* Hide placeholder text when printing empty fields */
+            input::placeholder {
+                color: transparent !important;
+            }
+            /* Styling for checkboxes on print */
+            input[type="checkbox"] {
+                display: none !important;
+            }
+            label[class*="cursor-pointer"] {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- Header Section -->
+    <header class="bg-gradient-to-r from-blue-900 via-indigo-900 to-blue-900 text-white py-6 shadow-md border-b-4 border-amber-500">
+        <div class="container mx-auto px-4 text-center">
+            <h1 class="text-lg md:text-xl font-bold text-amber-400 tracking-wider mb-1">ព្រះរាជាណាចក្រកម្ពុជា</h1>
+            <h2 class="text-sm md:text-base font-medium tracking-wide mb-3">ជាតិ សាសនា ព្រះមហាក្សត្រ</h2>
+            <div class="inline-block border-t border-amber-400 w-24 mb-4"></div>
+            <p class="text-xs md:text-sm text-slate-300">មន្ទីរអប់រំ យុវជន និងកីឡា</p>
+            <h3 class="text-xl md:text-3xl font-extrabold text-white my-2">វិទ្យាល័យល្វា</h3>
+            <p class="text-sm md:text-base bg-amber-500 text-blue-950 inline-block px-4 py-1 rounded-full font-semibold shadow mt-2">
+                ប្រព័ន្ធគ្រប់គ្រងការចុះឈ្មោះសិស្សចូលរៀន
+            </p>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="container mx-auto px-4 mt-6">
+        <div class="flex flex-wrap justify-center gap-2 border-b border-slate-300 pb-3">
+            <button onclick="switchTab('form-tab')" id="btn-form-tab" class="tab-btn active px-5 py-2.5 rounded-lg text-sm font-semibold bg-blue-900 text-white transition">
+                📝 ទម្រង់ចុះឈ្មោះសិស្ស
+            </button>
+            <button onclick="switchTab('report-tab')" id="btn-report-tab" class="tab-btn px-5 py-2.5 rounded-lg text-sm font-semibold bg-white text-slate-700 hover:bg-slate-150 transition border border-slate-300">
+                📊 ស្ថិតិ និងរបាយការណ៍
+            </button>
+            <button onclick="switchTab('list-tab')" id="btn-list-tab" class="tab-btn px-5 py-2.5 rounded-lg text-sm font-semibold bg-white text-slate-700 hover:bg-slate-150 transition border border-slate-300">
+                📋 បញ្ជីឈ្មោះសិស្សដែលបានចុះ
+            </button>
+            <button onclick="switchTab('supabase-tab')" id="btn-supabase-tab" class="tab-btn px-5 py-2.5 rounded-lg text-sm font-semibold bg-amber-500 text-blue-950 hover:bg-amber-600 transition border border-amber-400">
+                ⚡ មគ្គុទ្ទេសក៍ Supabase
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="container mx-auto px-4 py-6 max-w-6xl">
+
+        <!-- TAB 1: Registration Form -->
+        <section id="form-tab" class="tab-content block">
+            <form id="studentRegistrationForm" onsubmit="handleFormSubmit(event)" class="space-y-6">
+                
+                <!-- SECTION 1: ព័ត៌មានផ្ទាល់ខ្លួន -->
+                <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-blue-800">
+                    <h4 class="text-lg font-bold text-blue-900 border-b pb-2 mb-4 flex items-center gap-2">
+                        <span class="bg-blue-100 text-blue-800 rounded-full w-7 h-7 flex items-center justify-center text-sm no-print">១</span>
+                        ព័ត៌មានផ្ទាល់ខ្លួនរបស់សិស្ស
+                    </h4>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Student ID -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-600 mb-1">អត្តលេខ (មិនបង្ខំ)</label>
+                            <input type="text" id="student_id" placeholder="ឧ. 09893" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                        </div>
+                        <!-- Gender -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-600 mb-1">ភេទ <span class="text-red-500">*</span></label>
+                            <select id="gender" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white">
+                                <option value="">--- ជ្រើសរើស ---</option>
+                                <option value="ប្រុស">ប្រុស</option>
+                                <option value="ស្រី">ស្រី</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Student Name -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                        <!-- Khmer Name -->
+                        <div>
+                            <span class="text-sm font-bold text-indigo-900 block mb-2">ឈ្មោះជាភាសាខ្មែរ</span>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-xs text-slate-500 mb-1">គោត្តនាម <span class="text-red-500">*</span></label>
+                                    <input type="text" id="last_name_kh" placeholder="ឧ. សុខ" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-slate-500 mb-1">នាមខ្លួន <span class="text-red-500">*</span></label>
+                                    <input type="text" id="first_name_kh" placeholder="ឧ. តារា" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Latin Name -->
+                        <div>
+                            <span class="text-sm font-bold text-indigo-900 block mb-2">ឈ្មោះជាឡាតាំង (LATIN)</span>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-xs text-slate-500 mb-1">Last Name <span class="text-red-500">*</span></label>
+                                    <input type="text" id="last_name_en" placeholder="ឧ. SOK" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm uppercase">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-slate-500 mb-1">First Name <span class="text-red-500">*</span></label>
+                                    <input type="text" id="first_name_en" placeholder="ឧ. DARA" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm uppercase">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Date of Birth -->
+                    <div class="mt-4">
+                        <span class="block text-sm font-semibold text-slate-600 mb-1">ថ្ងៃខែឆ្នាំកំណើត <span class="text-red-500">*</span></span>
+                        <div class="grid grid-cols-3 gap-2">
+                            <select id="dob_day" required class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white">
+                                <option value="">ថ្ងៃទី</option>
+                                <!-- JS populated -->
+                            </select>
+                            <select id="dob_month" required class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white">
+                                <option value="">ខែ</option>
+                                <option value="មករា">មករា</option>
+                                <option value="កុម្ភៈ">កុម្ភៈ</option>
+                                <option value="មីនា">មីនា</option>
+                                <option value="មេសា">មេសា</option>
+                                <option value="ឧសភា">ឧសភា</option>
+                                <option value="មិថុនា">មិថុនា</option>
+                                <option value="កក្កដា">កក្កដា</option>
+                                <option value="សីហា">សីហា</option>
+                                <option value="កញ្ញា">កញ្ញា</option>
+                                <option value="តុលា">តុលា</option>
+                                <option value="វិច្ឆិកា">វិច្ឆិកា</option>
+                                <option value="ធ្នូ">ធ្នូ</option>
+                            </select>
+                            <select id="dob_year" required class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white">
+                                <option value="">ឆ្នាំ</option>
+                                <!-- JS populated -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Place of Birth & Current Address -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <!-- POB -->
+                        <div class="p-3 bg-blue-50/50 rounded-lg border border-blue-100">
+                            <span class="text-sm font-bold text-blue-900 block mb-2">ទីកន្លែងកំណើត</span>
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="text" id="pob_village" placeholder="ភូមិ" class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                <input type="text" id="pob_commune" placeholder="ឃុំ / សង្កាត់" class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                <input type="text" id="pob_district" placeholder="ស្រុក / ក្រុង" class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                <input type="text" id="pob_province" placeholder="ខេត្ត" class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                            </div>
+                        </div>
+                        
+                        <!-- Current Address (With copy functionality) -->
+                        <div class="p-3 bg-blue-50/50 rounded-lg border border-blue-100">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm font-bold text-blue-900 block">ទីលំនៅបច្ចុប្បន្ន</span>
+                                <label class="inline-flex items-center text-xs text-blue-800 cursor-pointer bg-blue-100/80 px-2 py-1 rounded hover:bg-blue-200/80 transition">
+                                    <input type="checkbox" id="same_as_pob" onchange="copyAddressValue()" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 mr-1.5">
+                                    ដូចគ្នានឹងទីកន្លែងកំណើត
+                                </label>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="text" id="cur_village" placeholder="ភូមិ" class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                <input type="text" id="cur_commune" placeholder="ឃុំ / សង្កាត់" class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                <input type="text" id="cur_district" placeholder="ស្រុក / ក្រុង" class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                <input type="text" id="cur_province" placeholder="ខេត្ត" class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Photo Upload and Birth Certificate Row -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <!-- Student Photo Upload (4x6 format) -->
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg flex flex-col items-center justify-center text-center">
+                            <span class="text-sm font-semibold text-slate-700 mb-2">📷 រូបថតសិស្ស (៤x៦)</span>
+                            <div class="relative w-32 h-40 bg-slate-200 rounded border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden mb-3">
+                                <img id="photo_preview" src="" class="hidden w-full h-full object-cover">
+                                <span id="photo_placeholder" class="text-xs text-slate-400">គ្មានរូបភាព</span>
+                            </div>
+                            <input type="file" id="student_photo" accept="image/*" onchange="previewImage(this, 'photo_preview', 'photo_placeholder')" class="no-print text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                        </div>
+                        
+                        <!-- Birth Certificate Upload -->
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg flex flex-col items-center justify-center text-center">
+                            <span class="text-sm font-semibold text-slate-700 mb-2">📄 រូបសំបុត្រកំណើត</span>
+                            <div class="relative w-full h-40 bg-slate-200 rounded border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden mb-3">
+                                <img id="birth_cert_preview" src="" class="hidden w-full h-full object-contain">
+                                <span id="birth_cert_placeholder" class="text-xs text-slate-400">គ្មានរូបភាព</span>
+                            </div>
+                            <input type="file" id="birth_certificate" accept="image/*" onchange="previewImage(this, 'birth_cert_preview', 'birth_cert_placeholder')" class="no-print text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 2: ព័ត៌មានការសិក្សា -->
+                <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-emerald-700">
+                    <h4 class="text-lg font-bold text-emerald-800 border-b pb-2 mb-4 flex items-center gap-2">
+                        <span class="bg-emerald-100 text-emerald-800 rounded-full w-7 h-7 flex items-center justify-center text-sm no-print">២</span>
+                        ព័ត៌មានការសិក្សា
+                    </h4>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <!-- Past Grade -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-600 mb-1">អតីតថ្នាក់ទី</label>
+                            <input type="text" id="past_grade" list="past_grades_list" placeholder="ជ្រើសរើស ឬសរសេរបញ្ចូល..." class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                            <datalist id="past_grades_list">
+                                <option value="ថ្នាក់ទី ៦"></option>
+                                <option value="ថ្នាក់ទី ៧"></option>
+                                <option value="ថ្នាក់ទី ៨"></option>
+                                <option value="ថ្នាក់ទី ៩"></option>
+                                <option value="ថ្នាក់ទី ១០"></option>
+                                <option value="ថ្នាក់ទី ១១"></option>
+                                <option value="ថ្នាក់ទី ១២"></option>
+                            </datalist>
+                        </div>
+                        <!-- From School -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-600 mb-1">មកពីសាលា</label>
+                            <input type="text" id="from_school" list="schools_list" placeholder="ជ្រើសរើស ឬសរសេរបញ្ចូល..." class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                            <datalist id="schools_list">
+                                <option value="វិ. ល្វា"></option>
+                                <option value="អនុវិ. ព្រៃខ្ពស់"></option>
+                                <option value="វិ. បវេល"></option>
+                                <option value="អនុវិ. សឿ"></option>
+                            </datalist>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-600 mb-1">ឆ្នាំសិក្សា</label>
+                            <input type="text" id="academic_year" placeholder="ឧ. ២០២៣-២០២៤" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Academic Result -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-600 mb-1">លទ្ធផលឆ្នាំសិក្សា <span class="text-red-500">*</span></label>
+                            <select id="academic_result" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white">
+                                <option value="">--- ជ្រើសរើស ---</option>
+                                <option value="ជាប់ជាស្ថាពរ">ជាប់ជាស្ថាពរ</option>
+                                <option value="ប្រឡងឡើងថ្នាក់">ប្រឡងឡើងថ្នាក់</option>
+                                <option value="ត្រួតថ្នាក់">ត្រួតថ្នាក់</option>
+                                <option value="ផ្ទេរចូល">ផ្ទេរចូល</option>
+                                <option value="សិស្សផ្ញើ">សិស្សផ្ញើ</option>
+                            </select>
+                        </div>
+                        <!-- Grade Level -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-600 mb-1">កម្រិតថ្នាក់ដែលត្រូវចូលរៀន <span class="text-red-500">*</span></label>
+                            <select id="grade_level" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white">
+                                <option value="">--- ជ្រើសរើស ---</option>
+                                <option value="ថ្នាក់ទី ៧">ថ្នាក់ទី ៧</option>
+                                <option value="ថ្នាក់ទី ៨">ថ្នាក់ទី ៨</option>
+                                <option value="ថ្នាក់ទី ៩">ថ្នាក់ទី ៩</option>
+                                <option value="ថ្នាក់ទី ១០">ថ្នាក់ទី ១០</option>
+                                <option value="ថ្នាក់ទី ១១ (វិទ្យាសាស្ត្រ)">ថ្នាក់ទី ១១ (វិទ្យាសាស្ត្រ)</option>
+                                <option value="ថ្នាក់ទី ១១ (វិទ្យាសាស្ត្រសង្គម)">ថ្នាក់ទី ១១ (វិទ្យាសាស្ត្រសង្គម)</option>
+                                <option value="ថ្នាក់ទី ១២ (វិទ្យាសាស្ត្រ)">ថ្នាក់ទី ១2 (វិទ្យាសាស្ត្រ)</option>
+                                <option value="ថ្នាក់ទី ១២ (វិទ្យាសាស្ត្រសង្គម)">ថ្នាក់ទី ១2 (វិទ្យាសាស្ត្រសង្គម)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 3: ព័ត៌មានអាណាព្យាបាល -->
+                <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-amber-500">
+                    <h4 class="text-lg font-bold text-amber-800 border-b pb-2 mb-4 flex items-center gap-2">
+                        <span class="bg-amber-100 text-amber-800 rounded-full w-7 h-7 flex items-center justify-center text-sm no-print">៣</span>
+                        ព័ត៌មានអាណាព្យាបាល
+                    </h4>
+
+                    <!-- Family Status -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold text-slate-600 mb-1">ស្ថានភាពគ្រួសារ <span class="text-red-500">*</span></label>
+                        <input type="text" id="family_status" list="family_status_list" required placeholder="ជ្រើសរើស ឬសរសេរបញ្ចូល..." class="w-full max-w-xs px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                        <datalist id="family_status_list">
+                            <option value="ឪពុកម្ដាយនៅរស់"></option>
+                            <option value="កំព្រាឪពុក"></option>
+                            <option value="កំព្រាម្ដាយ"></option>
+                            <option value="កំព្រាឪពុកម្ដាយ"></option>
+                            <option value="បែកបាក់គ្រួសារ"></option>
+                            <option value="ផ្សេងៗ"></option>
+                        </datalist>
+                    </div>
+
+                    <!-- Parents Info Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Father (Writable Job Dropdown) -->
+                        <div class="p-4 bg-amber-50/30 rounded-lg border border-amber-200">
+                            <span class="text-sm font-bold text-amber-900 block mb-3 border-b pb-1">ព័ត៌មានឪពុក</span>
+                            <div class="grid grid-cols-2 gap-2 mb-2">
+                                <input type="text" id="father_last_name" placeholder="គោត្តនាម" class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                <input type="text" id="father_first_name" placeholder="នាមខ្លួន" class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                            </div>
+                            <div class="grid grid-cols-3 gap-2">
+                                <input type="text" id="father_job" list="jobs_list" placeholder="មុខរបរ" class="col-span-2 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                <input type="number" id="father_age" placeholder="អាយុ" class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                            </div>
+                            <input type="tel" id="father_phone" oninput="formatPhoneNumber(this)" placeholder="លេខទូរស័ព្ទឪពុក (ឧ. 012 345 678)" class="w-full mt-2 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                        </div>
+
+                        <!-- Mother (Writable Job Dropdown) -->
+                        <div class="p-4 bg-amber-50/30 rounded-lg border border-amber-200">
+                            <span class="text-sm font-bold text-amber-900 block mb-3 border-b pb-1">ព័ត៌មានម្ដាយ</span>
+                            <div class="grid grid-cols-2 gap-2 mb-2">
+                                <input type="text" id="mother_last_name" placeholder="គោត្តនាម" class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                <input type="text" id="mother_first_name" placeholder="នាមខ្លួន" class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                            </div>
+                            <div class="grid grid-cols-3 gap-2">
+                                <input type="text" id="mother_job" list="jobs_list" placeholder="មុខរបរ" class="col-span-2 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                <input type="number" id="mother_age" placeholder="អាយុ" class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                            </div>
+                            <input type="tel" id="mother_phone" oninput="formatPhoneNumber(this)" placeholder="លេខទូរស័ព្ទម្ដាយ (ឧ. 012 345 678)" class="w-full mt-2 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                        </div>
+                    </div>
+
+                    <!-- Shared Occupations Datalist -->
+                    <datalist id="jobs_list">
+                        <option value="កសិករ"></option>
+                        <option value="អាជីវករ / អាជីវកម្មផ្ទាល់ខ្លួន"></option>
+                        <option value="មន្ត្រីរាជការ"></option>
+                        <option value="គ្រូបង្រៀន"></option>
+                        <option value="បុគ្គលិកក្រុមហ៊ុន"></option>
+                        <option value="កម្មករ / កម្មការិនីរោងចក្រ"></option>
+                        <option value="មេផ្ទះ"></option>
+                        <option value="ទាហាន / នគរបាល"></option>
+                        <option value="អ្នកបើកបរ"></option>
+                        <option value="សេរី (Freelance)"></option>
+                        <option value="គ្មាន (នៅផ្ទះ)"></option>
+                    </datalist>
+
+                    <!-- Guardian Contacts (Responsive 3-Column Grid) -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-600 mb-1">លេខទូរស័ព្ទអាណាព្យាបាល / តេឡេក្រាម <span class="text-red-500">*</span></label>
+                            <input type="tel" id="guardian_phone" required oninput="formatPhoneNumber(this)" placeholder="ឧ. 012 345 678" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-600 mb-1">បណ្ដាញសង្គមអាណាព្យាបាល</label>
+                            <input type="text" id="guardian_social" placeholder="ឧ. Facebook Name" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-600 mb-1">តំណលីងបណ្ដាញសង្គម (Social Link)</label>
+                            <input type="url" id="guardian_social_link" placeholder="ឧ. https://facebook.com/user" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                        </div>
+                    </div>
+
+                    <!-- Motorbike details for card generation -->
+                    <div class="mt-6 p-4 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                        <span class="text-sm font-bold text-slate-700 block mb-2">🏍️ សម្រាប់ធ្វើប័ណ្ណម៉ូតូ (មិនបង្ខំ)</span>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <!-- Motorbike Type -->
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">ប្រភេទម៉ូតូ</label>
+                                <input type="text" id="moto_type" list="moto_types_list" placeholder="ជ្រើសរើស ឬសរសេរបញ្ចូល..." class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                <datalist id="moto_types_list">
+                                    <option value="Honda Dream"></option>
+                                    <option value="Honda Wave"></option>
+                                    <option value="Honda Scoopy"></option>
+                                    <option value="Suzuki Viva"></option>
+                                    <option value="Suzuki Nex"></option>
+                                    <option value="Yamaha Sirius"></option>
+                                    <option value="Zoomer-X"></option>
+                                </datalist>
+                            </div>
+                            <!-- Motorbike Year -->
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">ស៊េរីឆ្នាំ</label>
+                                <input type="text" id="moto_year" list="moto_years_list" placeholder="ជ្រើសរើស ឬសរសេរបញ្ចូល..." class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                <datalist id="moto_years_list">
+                                    <option value="2027"></option>
+                                    <option value="2026"></option>
+                                    <option value="2025"></option>
+                                    <option value="2024"></option>
+                                    <option value="2023"></option>
+                                    <option value="2022"></option>
+                                    <option value="2021"></option>
+                                    <option value="2020"></option>
+                                    <option value="2019"></option>
+                                    <option value="2018"></option>
+                                    <option value="2017"></option>
+                                </datalist>
+                            </div>
+                            <!-- Motorbike Color -->
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">ពណ៌</label>
+                                <input type="text" id="moto_color" list="moto_colors_list" placeholder="ជ្រើសរើស ឬសរសេរបញ្ចូល..." class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                <datalist id="moto_colors_list">
+                                    <option value="ខ្មៅ"></option>
+                                    <option value="ក្រហម"></option>
+                                    <option value="ស"></option>
+                                    <option value="ប្រផេះ"></option>
+                                    <option value="ខៀវ"></option>
+                                    <option value="លឿង"></option>
+                                </datalist>
+                            </div>
+                        </div>
+
+                        <!-- Moto Plate info -->
+                        <div class="mt-3 p-3 bg-white rounded-lg border border-slate-200">
+                            <label class="block text-xs font-semibold text-slate-600 mb-2">ព័ត៌មានស្លាកលេខម៉ូតូ</label>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                                <div>
+                                    <label class="block text-[10px] text-slate-400">ខេត្ត</label>
+                                    <input type="text" id="moto_plate_province" placeholder="ឧ. បាត់ដំបង" class="w-full px-3 py-1.5 border rounded-lg text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-slate-400">ក្បាលស្លាក</label>
+                                    <input type="text" id="moto_plate_head" placeholder="ឧ. 1AZ" class="w-full px-3 py-1.5 border rounded-lg text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-slate-400">កន្ទុយស្លាក</label>
+                                    <input type="text" id="moto_plate_tail" placeholder="ឧ. 7895" class="w-full px-3 py-1.5 border rounded-lg text-xs">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit and Print Action Buttons -->
+                <div class="flex flex-col sm:flex-row justify-center gap-4 text-center mt-6 no-print">
+                    <button type="submit" class="px-10 py-3 bg-gradient-to-r from-blue-900 to-indigo-800 text-white font-bold rounded-xl shadow-lg hover:from-blue-850 hover:to-indigo-750 transition transform hover:-translate-y-0.5">
+                        💾 រក្សាទុកការចុះឈ្មោះ
+                    </button>
+                    <button type="button" onclick="printForm()" class="px-10 py-3 bg-slate-700 text-white font-bold rounded-xl shadow-lg hover:bg-slate-800 transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                        🖨️ បោះពុម្ពទម្រង់ (A4)
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- TAB 2: Reports & Charts -->
+        <section id="report-tab" class="tab-content hidden space-y-6">
+            <!-- Analytics Cards Summary -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white p-5 rounded-xl shadow border-l-4 border-blue-600 text-center">
+                    <p class="text-sm font-semibold text-slate-500">ចំនួនសិស្សសរុប</p>
+                    <p id="total-student-badge" class="text-3xl font-bold text-blue-900 mt-2">0</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow border-l-4 border-rose-500 text-center">
+                    <p class="text-sm font-semibold text-slate-500">សិស្សស្រី</p>
+                    <p id="total-female-badge" class="text-3xl font-bold text-rose-600 mt-2">0</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow border-l-4 border-teal-500 text-center">
+                    <p class="text-sm font-semibold text-slate-500">សិស្សប្រុស</p>
+                    <p id="total-male-badge" class="text-3xl font-bold text-teal-600 mt-2">0</p>
+                </div>
+            </div>
+
+            <!-- Charts Section Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Chart 1 -->
+                <div class="bg-white p-5 rounded-xl shadow-md">
+                    <h5 class="text-sm font-bold text-slate-700 mb-4 border-b pb-2 text-center">📊 ចំនួនសិស្សតាមកម្រិតថ្នាក់</h5>
+                    <div class="relative h-64">
+                        <canvas id="gradeChart"></canvas>
+                    </div>
+                </div>
+                <!-- Chart 2 -->
+                <div class="bg-white p-5 rounded-xl shadow-md">
+                    <h5 class="text-sm font-bold text-slate-700 mb-4 border-b pb-2 text-center">📈 ចំនួនសិស្សតាមលទ្ធផលការសិក្សា</h5>
+                    <div class="relative h-64">
+                        <canvas id="resultChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: Student Directory -->
+        <section id="list-tab" class="tab-content hidden">
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
+                    <h4 class="text-lg font-bold text-blue-900">📋 បញ្ជីឈ្មោះសិស្សចុះឈ្មោះចូលរៀន</h4>
+                    <!-- Search Input -->
+                    <div class="w-full md:w-64">
+                        <input type="text" id="searchBox" oninput="filterTable()" placeholder="ស្វែងរកឈ្មោះសិស្ស..." class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+
+                <!-- Table Container -->
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600">រូបថត</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600">អត្តលេខ</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600">ឈ្មោះខ្មែរ</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600">ឈ្មោះឡាតាំង</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600">ភេទ</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600">កម្រិតថ្នាក់</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600">លទ្ធផលសិក្សា</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600">លេខទូរស័ព្ទ</th>
+                                <th class="px-3 py-3 text-center font-semibold text-slate-600">សកម្មភាព</th>
+                            </tr>
+                        </thead>
+                        <tbody id="student-table-body" class="divide-y divide-slate-100">
+                            <!-- JS Dynamically rendered rows -->
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Empty data check -->
+                <div id="no-data-msg" class="text-center py-10 text-slate-400 hidden">
+                    មិនមានទិន្នន័យសិស្សឡើយ។ សូមចុះឈ្មោះសិស្សថ្មីជាមុនសិន។
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: Supabase Connection Guide -->
+        <section id="supabase-tab" class="tab-content hidden">
+            <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-amber-500">
+                <h4 class="text-lg font-bold text-slate-800 mb-2">⚡ ការណែនាំអំពីការចងភ្ជាប់ជាមួយ Supabase</h4>
+                <p class="text-sm text-slate-600 mb-4 leading-relaxed">
+                    កម្មវិធីនេះត្រូវបានរៀបចំឡើងយ៉ាងស្អាត និងមានរចនាសម្ព័ន្ធទិន្នន័យ (Data Object) ច្បាស់លាស់។ លោកអ្នកអាចភ្ជាប់កម្មវិធីនេះទៅកាន់ Supabase Database របស់អ្នកបានយ៉ាងងាយស្រួលបំផុតដោយគ្រាន់តែអនុវត្តតាមជំហានសាមញ្ញៗខាងក្រោម៖
+                </p>
+
+                <div class="space-y-4 text-sm text-slate-700">
+                    <div class="bg-slate-50 p-4 rounded-lg">
+                        <span class="font-bold text-blue-900 block mb-1">ជំហានទី១៖ បន្ថែម Supabase Library ទៅក្នុង Header &lt;head&gt;</span>
+                        <code class="block bg-slate-200 text-rose-700 p-2 rounded mt-1 font-mono text-xs overflow-x-auto">
+                            &lt;script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"&gt;&lt;/script&gt;
+                        </code>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-lg">
+                        <span class="font-bold text-blue-900 block mb-1">ជំហានទី២៖ បង្កើត Client Supabase ក្នុង Javascript</span>
+                        <pre class="bg-slate-200 text-emerald-800 p-3 rounded mt-1 font-mono text-xs overflow-x-auto">
+const supabaseUrl = 'YOUR_SUPABASE_PROJECT_URL';
+const supabaseKey = 'YOUR_SUPABASE_ANON_KEY';
+const supabase = supabase.createClient(supabaseUrl, supabaseKey);</pre>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-lg">
+                        <span class="font-bold text-blue-900 block mb-1">ជំហានទី៣៖ កូដសម្រាប់បញ្ចូលទិន្នន័យសិស្សទៅកាន់ Database</span>
+                        <p class="text-xs text-slate-500 mb-2">(ជំនួសមុខងាររក្សាទុកដែលមានស្រាប់ទៅជាមុខងារ Supabase ដូចខាងក្រោម៖)</p>
+                        <pre class="bg-slate-200 text-blue-900 p-3 rounded mt-1 font-mono text-xs overflow-x-auto">
+async function saveToSupabase(newStudent) {
+    const { data, error } = await supabase
+        .from('students') // matching your table name
+        .insert([newStudent]);
+
+    if (error) {
+        alert('មានបញ្ហាក្នុងការរក្សាទុក៖ ' + error.message);
+    } else {
+        alert('ទិន្នន័យត្រូវបានរក្សាទុកទៅកាន់ Supabase ដោយជោគជ័យ!');
+    }
+}</pre>
+                    </div>
+                    
+                    <div class="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                        <span class="font-bold text-amber-900 block mb-1">📌 ចំណាំបន្ថែមសម្រាប់ការរក្សាទុករូបភាព៖</span>
+                        <p class="text-xs text-amber-800 leading-relaxed">
+                            សម្រាប់រូបភាព (រូបថត និងរូបសំបុត្រកំណើត) នៅក្នុងកូដនេះត្រូវបានបម្លែងទៅជា <code class="bg-white px-1 py-0.5 rounded border">Base64 Text</code> រួចជាស្រេច ដែលលោកអ្នកអាចរក្សាទុកវាទៅក្នុង Column ប្រភេទ <code class="bg-white px-1 py-0.5 rounded border">text</code> នៅក្នុង Supabase ផ្ទាល់បានយ៉ាងងាយ។ ប៉ុន្តែសម្រាប់ការអភិវឌ្ឍជាផ្លូវការធំៗ គេនិយមរក្សាទុករូបភាពទាំងនេះនៅក្នុង **Supabase Storage Buckets** ហើយរក្សាទុកតែតំណលីង (URL) នៅក្នុង Table វិញ។
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 text-slate-400 text-xs py-6 mt-12 border-t border-slate-700">
+        <div class="container mx-auto px-4 text-center">
+            <p class="mb-2">រក្សាសិទ្ធិគ្រប់យ៉ាងដោយ © ២០២៤ វិទ្យាល័យល្វា</p>
+            <p>រចនាសម្រាប់ប្រព័ន្ធគ្រប់គ្រងសាលារៀន និងងាយស្រួលក្នុងការសិក្សារៀនសរសេរកម្មវិធី</p>
+        </div>
+    </footer>
+
+    <!-- Script Section -->
+    <script>
+        // === ការកំណត់ Supabase CREDENTIALS ===
+        // សូមបំពេញព័ត៌មាន Supabase របស់អ្នកនៅទីនេះ ដើម្បីភ្ជាប់ទិន្នន័យសិស្សទៅកាន់ Database និង Google Sheet
+        const SUPABASE_URL = ""; // ឧទាហរណ៍៖ "https://your-project.supabase.co"
+        const SUPABASE_KEY = ""; // ដាក់ Anon Key របស់អ្នកនៅទីនេះ
+        
+        let supabaseClient = null;
+        if (SUPABASE_URL && SUPABASE_KEY) {
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        }
+
+        // Global variables to store base64 strings of uploaded files
+        let studentPhotoBase64 = '';
+        let birthCertBase64 = '';
+
+        // Initial setup for DOB Days and Years dropdown
+        const dobDaySelect = document.getElementById('dob_day');
+        const dobYearSelect = document.getElementById('dob_year');
+
+        // Populate Days (1 - 31)
+        for(let i = 1; i <= 31; i++) {
+            let option = document.createElement('option');
+            option.value = i;
+            option.textContent = i;
+            dobDaySelect.appendChild(option);
+        }
+
+        // Populate Years (2000 - 2024)
+        const currentYear = new Date().getFullYear();
+        for(let i = currentYear; i >= 2000; i--) {
+            let option = document.createElement('option');
+            option.value = i;
+            option.textContent = i;
+            dobYearSelect.appendChild(option);
+        }
+
+        // Auto Format Phone Number logic (Cambodia format: XXX XXX XXX or XXX XXX XXXX)
+        function formatPhoneNumber(input) {
+            let value = input.value.replace(/\D/g, ''); // Keep only digits
+            
+            if (value.length > 10) {
+                value = value.substring(0, 10); // Limit to maximum 10 digits
+            }
+            
+            let formattedValue = '';
+            if (value.length > 0) {
+                formattedValue += value.substring(0, 3);
+            }
+            if (value.length > 3) {
+                formattedValue += ' ' + value.substring(3, 6);
+            }
+            if (value.length > 6) {
+                formattedValue += ' ' + value.substring(6, 10);
+            }
+            
+            input.value = formattedValue.trim();
+        }
+
+        // File upload & preview handler (brings photo to base64)
+        function previewImage(input, previewId, placeholderId) {
+            const file = input.files[0];
+            const preview = document.getElementById(previewId);
+            const placeholder = document.getElementById(placeholderId);
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.classList.remove('hidden');
+                    placeholder.classList.add('hidden');
+                    
+                    // Assign to corresponding base64 variable
+                    if (previewId === 'photo_preview') {
+                        studentPhotoBase64 = e.target.result;
+                    } else if (previewId === 'birth_cert_preview') {
+                        birthCertBase64 = e.target.result;
+                    }
+                }
+                reader.readAsDataURL(file);
+            } else {
+                preview.src = "";
+                preview.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+                
+                if (previewId === 'photo_preview') studentPhotoBase64 = '';
+                if (previewId === 'birth_cert_preview') birthCertBase64 = '';
+            }
+        }
+
+        // Trigger Print Command
+        function printForm() {
+            // Must switch to Form Tab before print to ensure data exists inside printable DOM
+            switchTab('form-tab');
+            setTimeout(() => {
+                window.print();
+            }, 100);
+        }
+
+        // Copy Address logic
+        function copyAddressValue() {
+            const sameAsPobCheckbox = document.getElementById('same_as_pob');
+            
+            if (sameAsPobCheckbox.checked) {
+                // Get values from Place of Birth
+                const village = document.getElementById('pob_village').value;
+                const commune = document.getElementById('pob_commune').value;
+                const district = document.getElementById('pob_district').value;
+                const province = document.getElementById('pob_province').value;
+
+                // Paste to Current Address
+                document.getElementById('cur_village').value = village;
+                document.getElementById('cur_commune').value = commune;
+                document.getElementById('cur_district').value = district;
+                document.getElementById('cur_province').value = province;
+            } else {
+                // Clear Current Address if unchecked
+                document.getElementById('cur_village').value = '';
+                document.getElementById('cur_commune').value = '';
+                document.getElementById('cur_district').value = '';
+                document.getElementById('cur_province').value = '';
+            }
+        }
+
+        // Dummy Data to make charts alive on first load
+        const dummyStudents = [
+            {
+                id: "1", student_id: "LVEA-2024-001", gender: "ស្រី", 
+                last_name_kh: "សុខ", first_name_kh: "កញ្ញា", last_name_en: "SOK", first_name_en: "KANHA",
+                dob_day: "12", dob_month: "មករា", dob_year: "2007",
+                grade_level: "ថ្នាក់ទី ១០", academic_result: "ជាប់ជាស្ថាពរ", guardian_phone: "012 888 999",
+                photo_base64: ""
+            },
+            {
+                id: "2", student_id: "LVEA-2024-002", gender: "ប្រុស", 
+                last_name_kh: "នួន", first_name_kh: "តារា", last_name_en: "NUON", first_name_en: "DARA",
+                dob_day: "05", dob_month: "មិថុនា", dob_year: "2006",
+                grade_level: "ថ្នាក់ទី ១១ (វិទ្យាសាស្ត្រ)", academic_result: "ជាប់ជាស្ថាពរ", guardian_phone: "099 777 555",
+                photo_base64: ""
+            },
+            {
+                id: "3", student_id: "LVEA-2024-003", gender: "ស្រី", 
+                last_name_kh: "ចាន់", first_name_kh: "ធារី", last_name_en: "CHAN", first_name_en: "THEARY",
+                dob_day: "20", dob_month: "កញ្ញា", dob_year: "2008",
+                grade_level: "ថ្នាក់ទី ៩", academic_result: "ប្រឡងឡើងថ្នាក់", guardian_phone: "015 222 333",
+                photo_base64: ""
+            },
+            {
+                id: "4", student_id: "LVEA-2024-004", gender: "ប្រុស", 
+                last_name_kh: "ហេង", first_name_kh: "សំណាង", last_name_en: "HENG", first_name_en: "SAMNANG",
+                dob_day: "15", dob_month: "ធ្នូ", dob_year: "2005",
+                grade_level: "ថ្នាក់ទី ១២ (វិទ្យាសាស្ត្រសង្គម)", academic_result: "ត្រួតថ្នាក់", guardian_phone: "098 444 555",
+                photo_base64: ""
+            },
+            {
+                id: "5", student_id: "LVEA-2024-005", gender: "ស្រី", 
+                last_name_kh: "គឹម", first_name_kh: "សៀវឡាន", last_name_en: "KIM", first_name_en: "SIEVLAN",
+                dob_day: "01", dob_month: "មេសា", dob_year: "2007",
+                grade_level: "ថ្នាក់ទី ១០", academic_result: "ផ្ទេរចូល", guardian_phone: "088 666 777",
+                photo_base64: ""
+            }
+        ];
+
+        // Database logic utilizing localStorage
+        let dbStudents = JSON.parse(localStorage.getItem('lvea_highschool_students'));
+        if (!dbStudents || dbStudents.length === 0) {
+            dbStudents = dummyStudents;
+            localStorage.setItem('lvea_highschool_students', JSON.stringify(dbStudents));
+        }
+
+        // Global Chart Instance Holders
+        let gradeChartInstance = null;
+        let resultChartInstance = null;
+
+        // On Load initialization
+        window.onload = function() {
+            // If Supabase API configured, fetch live records from Supabase
+            if (supabaseClient) {
+                fetchStudentsFromSupabase();
+            } else {
+                renderTable();
+                renderCharts();
+            }
+        };
+
+        // Tab Switching logic
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('block'));
+            
+            document.getElementById(tabId).classList.remove('hidden');
+            document.getElementById(tabId).classList.add('block');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-900', 'text-white');
+                btn.classList.add('bg-white', 'text-slate-700', 'border-slate-300');
+            });
+
+            // Active button design correction
+            const activeBtn = document.getElementById('btn-' + tabId);
+            if(tabId === 'supabase-tab') {
+                activeBtn.classList.remove('bg-white', 'text-slate-700');
+                activeBtn.classList.add('bg-amber-600', 'text-blue-950');
+            } else {
+                activeBtn.classList.remove('bg-white', 'text-slate-700');
+                activeBtn.classList.add('bg-blue-900', 'text-white');
+            }
+
+            // Redraw charts if reporting tab is selected to prevent sizing issues
+            if (tabId === 'report-tab') {
+                setTimeout(() => {
+                    renderCharts();
+                }, 50);
+            }
+        }
+
+        // Fetch data from Supabase
+        async function fetchFromSupabase() {
+            if (!supabaseClient) return;
+            const { data, error } = await supabaseClient
+                .from('students')
+                .select('*');
+            if (error) {
+                console.error("Error fetching data:", error);
+            } else {
+                dbStudents = data;
+                renderTable();
+                renderCharts();
+            }
+        }
+
+        // Render Table list of students
+        function renderTable() {
+            const tableBody = document.getElementById('student-table-body');
+            const noDataMsg = document.getElementById('no-data-msg');
+            tableBody.innerHTML = '';
+
+            if (dbStudents.length === 0) {
+                noDataMsg.classList.remove('hidden');
+                return;
+            } else {
+                noDataMsg.classList.add('hidden');
+            }
+
+            dbStudents.forEach((student, index) => {
+                // Photo rendering logic (Shows avatar in directory if image is uploaded)
+                const avatarImg = student.photo_base64 
+                    ? `<img src="${student.photo_base64}" class="w-10 h-10 rounded-full object-cover border border-slate-300">`
+                    : `<div class="w-10 h-10 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[10px] font-bold">គ្មានរូប</div>`;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="px-3 py-2">${avatarImg}</td>
+                    <td class="px-3 py-3 text-slate-700 font-semibold">${student.student_id || 'N/A'}</td>
+                    <td class="px-3 py-3 text-blue-900 font-bold">${student.last_name_kh} ${student.first_name_kh}</td>
+                    <td class="px-3 py-3 font-semibold uppercase">${student.last_name_en} ${student.first_name_en}</td>
+                    <td class="px-3 py-3">
+                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold ${student.gender === 'ស្រី' ? 'bg-rose-100 text-rose-700' : 'bg-teal-100 text-teal-700'}">
+                            ${student.gender}
+                        </span>
+                    </td>
+                    <td class="px-3 py-3 text-slate-700">${student.grade_level}</td>
+                    <td class="px-3 py-3 text-slate-700">
+                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold ${student.academic_result === 'ជាប់ជាស្ថាពរ' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}">
+                            ${student.academic_result}
+                        </span>
+                    </td>
+                    <td class="px-3 py-3 text-slate-600">${student.guardian_phone}</td>
+                    <td class="px-3 py-3 text-center">
+                        <button onclick="deleteStudent('${student.id}')" class="text-rose-600 hover:text-rose-800 font-semibold text-xs">លុប</button>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // Search Filter
+        function filterTable() {
+            const query = document.getElementById('searchBox').value.toLowerCase();
+            const rows = document.querySelectorAll('#student-table-body tr');
+            rows.forEach(row => {
+                const khName = row.cells[2].textContent.toLowerCase();
+                const enName = row.cells[3].textContent.toLowerCase();
+                if(khName.includes(query) || enName.includes(query)) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            });
+        }
+
+        // Handle Registration Form submission
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+
+            const newStudent = {
+                student_id: document.getElementById('student_id').value.trim(),
+                gender: document.getElementById('gender').value,
+                last_name_kh: document.getElementById('last_name_kh').value.trim(),
+                first_name_kh: document.getElementById('first_name_kh').value.trim(),
+                last_name_en: document.getElementById('last_name_en').value.trim(),
+                first_name_en: document.getElementById('first_name_en').value.trim(),
+                dob_day: document.getElementById('dob_day').value,
+                dob_month: document.getElementById('dob_month').value,
+                dob_year: document.getElementById('dob_year').value,
+                
+                // Places
+                pob_village: document.getElementById('pob_village').value,
+                pob_commune: document.getElementById('pob_commune').value,
+                pob_district: document.getElementById('pob_district').value,
+                pob_province: document.getElementById('pob_province').value,
+                cur_village: document.getElementById('cur_village').value,
+                cur_commune: document.getElementById('cur_commune').value,
+                cur_district: document.getElementById('cur_district').value,
+                cur_province: document.getElementById('cur_province').value,
+
+                // Academic
+                past_grade: document.getElementById('past_grade').value,
+                from_school: document.getElementById('from_school').value,
+                academic_year: document.getElementById('academic_year').value,
+                academic_result: document.getElementById('academic_result').value,
+                grade_level: document.getElementById('grade_level').value,
+
+                // Parents & Contacts
+                family_status: document.getElementById('family_status').value,
+                father_last_name: document.getElementById('father_last_name').value,
+                father_first_name: document.getElementById('father_first_name').value,
+                father_job: document.getElementById('father_job').value,
+                father_age: document.getElementById('father_age').value ? parseInt(document.getElementById('father_age').value) : null,
+                father_phone: document.getElementById('father_phone').value,
+                mother_last_name: document.getElementById('mother_last_name').value,
+                mother_first_name: document.getElementById('mother_first_name').value,
+                mother_job: document.getElementById('mother_job').value,
+                mother_age: document.getElementById('mother_age').value ? parseInt(document.getElementById('mother_age').value) : null,
+                mother_phone: document.getElementById('mother_phone').value,
+                guardian_phone: document.getElementById('guardian_phone').value,
+                guardian_social: document.getElementById('guardian_social').value,
+                guardian_social_link: document.getElementById('guardian_social_link').value.trim(),
+
+                // Motorbike Info
+                moto_type: document.getElementById('moto_type').value,
+                moto_year: document.getElementById('moto_year').value,
+                moto_color: document.getElementById('moto_color').value,
+                moto_plate_province: document.getElementById('moto_plate_province').value,
+                moto_plate_head: document.getElementById('moto_plate_head').value,
+                moto_plate_tail: document.getElementById('moto_plate_tail').value,
+
+                // Photos Base64 data
+                photo_base64: studentPhotoBase64,
+                birth_cert_base64: birthCertBase64
+            };
+
+            // IF SUPABASE CLIENT IS ENABLED
+            if (supabaseClient) {
+                const { data, error } = await supabaseClient
+                    .from('students')
+                    .insert([newStudent]);
+                
+                if (error) {
+                    alert("មានបញ្ហាក្នុងការបញ្ជូនទៅ Supabase: " + error.message);
+                } else {
+                    alert("ចុះឈ្មោះសិស្ស " + newStudent.last_name_kh + " " + newStudent.first_name_kh + " ទៅកាន់ Supabase ជោគជ័យ!");
+                    fetchStudentsFromSupabase();
+                }
+            } else {
+                // FALLBACK TO LOCALSTORAGE
+                newStudent.id = Date.now().toString();
+                dbStudents.push(newStudent);
+                localStorage.setItem('lvea_highschool_students', JSON.stringify(dbStudents));
+                alert("រក្សាទុកជាលក្ខណៈ Offline ក្នុងកម្មវិធី (Local) ជោគជ័យ!");
+                renderTable();
+                renderCharts();
+            }
+
+            // Clear previews & resets
+            document.getElementById('studentRegistrationForm').reset();
+            document.getElementById('same_as_pob').checked = false;
+            
+            document.getElementById('photo_preview').classList.add('hidden');
+            document.getElementById('photo_placeholder').classList.remove('hidden');
+            document.getElementById('birth_cert_preview').classList.add('hidden');
+            document.getElementById('birth_cert_placeholder').classList.remove('hidden');
+            studentPhotoBase64 = '';
+            birthCertBase64 = '';
+
+            // Redirect to Table List Tab
+            switchTab('list-tab');
+        }
+
+        // Fetch student lists from Supabase
+        async function fetchStudentsFromSupabase() {
+            if (!supabaseClient) return;
+            const { data, error } = await supabaseClient.from('students').select('*');
+            if (error) {
+                console.error(error);
+            } else {
+                dbStudents = data;
+                renderTable();
+                renderCharts();
+            }
+        }
+
+        // Delete student
+        async function deleteStudent(id) {
+            if(confirm("តើអ្នកច្បាស់ទេថានឹងលុបទិន្នន័យសិស្សម្នាក់នេះ?")) {
+                if (supabaseClient) {
+                    const { error } = await supabaseClient.from('students').delete().eq('id', id);
+                    if (error) {
+                        alert("មិនអាចលុបបាន៖ " + error.message);
+                    } else {
+                        fetchStudentsFromSupabase();
+                    }
+                } else {
+                    dbStudents = dbStudents.filter(s => s.id !== id);
+                    localStorage.setItem('lvea_highschool_students', JSON.stringify(dbStudents));
+                    renderTable();
+                    renderCharts();
+                }
+            }
+        }
+
+        // Render Statistics & Charts with Chart.js
+        function renderCharts() {
+            // Count metrics
+            const total = dbStudents.length;
+            const femaleCount = dbStudents.filter(s => s.gender === 'ស្រី').length;
+            const maleCount = dbStudents.filter(s => s.gender === 'ប្រុស').length;
+
+            document.getElementById('total-student-badge').textContent = total;
+            document.getElementById('total-female-badge').textContent = femaleCount;
+            document.getElementById('total-male-badge').textContent = maleCount;
+
+            // Compute Grade distributions
+            const grades = [
+                'ថ្នាក់ទី ៧', 'ថ្នាក់ទី ៨', 'ថ្នាក់ទី ៩', 'ថ្នាក់ទី ១០', 
+                'ថ្នាក់ទី ១១ (វិទ្យាសាស្ត្រ)', 'ថ្នាក់ទី ១១ (វិទ្យាសាស្ត្រសង្គម)', 
+                'ថ្នាក់ទី ១២ (វិទ្យាសាស្ត្រ)', 'ថ្នាក់ទី ១២ (វិទ្យាសាស្ត្រសង្គម)'
+            ];
+            const gradeCounts = grades.map(g => dbStudents.filter(s => s.grade_level === g).length);
+
+            // Compute Results distributions
+            const results = ['ជាប់ជាស្ថាពរ', 'ប្រឡងឡើងថ្នាក់', 'ត្រួតថ្នាក់', 'ផ្ទេរចូល', 'សិស្សផ្ញើ'];
+            const resultCounts = results.map(r => dbStudents.filter(s => s.academic_result === r).length);
+
+            // Destroy previous instances to avoid rendering memory leak/overlapping
+            if (gradeChartInstance) {
+                gradeChartInstance.destroy();
+            }
+            if (resultChartInstance) {
+                resultChartInstance.destroy();
+            }
+
+            // Draw Grade Chart (Bar Chart)
+            const ctxGrade = document.getElementById('gradeChart').getContext('2d');
+            gradeChartInstance = new Chart(ctxGrade, {
+                type: 'bar',
+                data: {
+                    labels: grades,
+                    datasets: [{
+                        label: 'ចំនួនសិស្ស',
+                        data: gradeCounts,
+                        backgroundColor: 'rgba(30, 58, 138, 0.85)', // Deep Navy Blue
+                        borderColor: 'rgba(30, 58, 138, 1)',
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+
+            // Draw Result Chart (Pie Chart)
+            const ctxResult = document.getElementById('resultChart').getContext('2d');
+            resultChartInstance = new Chart(ctxResult, {
+                type: 'doughnut',
+                data: {
+                    labels: results,
+                    datasets: [{
+                        data: resultCounts,
+                        backgroundColor: [
+                            '#10b981', // Emerald for passed
+                            '#3b82f6', // Blue for promoted
+                            '#ef4444', // Red for repeating
+                            '#f59e0b', // Amber for transfer in
+                            '#6366f1'  // Indigo for guest
+                        ],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { boxWidth: 12 }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
